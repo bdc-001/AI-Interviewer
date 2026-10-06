@@ -1,0 +1,20 @@
+{
+  "name": "nova-screen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "livekit:dev": "node livekit-agent.js dev",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@livekit/agents": "^1.9.1",
+    "@vercel/functions": "^3.9.11",
+    "express": "^5.2.1"
+  },
+  "overrides": {
+    "@livekit/agents": {
+      "sharp": "0.35.5"
+    }
+  }
+}

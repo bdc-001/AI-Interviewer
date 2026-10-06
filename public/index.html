@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nova Solution | Peoplebox</title>
+    <link rel="icon" href="/brand/peoplebox-mark.png" />
+    <link rel="stylesheet" href="/design-system/tokens.css" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <div id="app-shell" class="app-shell">
+      <aside id="sidebar" class="sidebar" aria-label="Product navigation">
+        <div class="sidebar-brand">
+          <img class="sidebar-logo" src="/brand/peoplebox-mark.png" alt="Peoplebox logo" />
+          <span class="sidebar-brand-copy"><strong>Nova</strong><small>by Peoplebox</small></span>
+          <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="sidebar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5-7 7 7 7" /></svg>
+          </button>
+        </div>
+        <nav class="side-nav" aria-label="Sections">
+          <button type="button" class="nav-item" data-nav="screen" aria-current="page" aria-label="Solution" title="Solution"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H11l-5 3v-3H4z"/><path d="M8 9h8M8 13h5"/></svg><span class="nav-label">Solution</span></button>
+          <button type="button" class="nav-item" data-nav="brief" aria-label="Tickets" title="Tickets"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a2 2 0 0 1 2 2v13H4v-13a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span class="nav-label">Tickets</span></button>
+          <button type="button" class="nav-item" data-nav="priorities" aria-label="Priorities" title="Priorities"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V5M12 19V9M19 19V3"/><path d="M3 19h18"/></svg><span class="nav-label">Priorities</span></button>
+          <button type="button" class="nav-item" data-nav="prompt" aria-label="Prompt" title="Prompt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-6 7 6 7M16 5l6 7-6 7M14 3l-4 18"/></svg><span class="nav-label">Prompt</span></button>
+          <button type="button" class="nav-item" data-nav="walkthrough" aria-label="Walkthrough" title="Walkthrough"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg><span class="nav-label">Walkthrough</span></button>
+          <button type="button" class="nav-item" data-nav="settings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="nav-label">Settings</span><span id="model-indicator" class="model-indicator" aria-hidden="true"></span></button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="model-status-row"><span id="model-status" class="model-status">Built-in call logic</span></div>
+        </div>
+      </aside>
+      <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close navigation" hidden></button>
+      <div class="app-main">
+        <header class="section-bar">
+          <h1 id="section-title" class="module-title">Solution</h1>
+          <div id="audience-switch" class="chat-mode-switch audience-switch" role="group" aria-label="Who is using this screen">
+            <button id="audience-interviewee" class="mode-button is-active" type="button" aria-pressed="true">Interviewee</button>
+            <button id="audience-recruiter" class="mode-button" type="button" aria-pressed="false">Recruiter</button>
+          </div>
+        </header>
+        <header class="mobile-topbar">
+          <button id="mobile-nav-toggle" class="mobile-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+          <img src="/brand/peoplebox-mark.png" alt="" /><strong>Nova</strong><span>by Peoplebox</span>
+        </header>
+        <main class="wrap">
+      <p id="error" class="banner" hidden>
+        This page needs the local server. In this folder run <strong>node server.js</strong>, then open
+        http://localhost:4173
+      </p>
+
+      <section class="view" data-view="brief">
+        <div class="wide ticket-workspace">
+          <header class="page-heading">
+            <div>
+              <p class="eyebrow">CUSTOMER SIGNAL</p>
+              <h1>Ticket tracker</h1>
+              <p class="lede">These twelve notes are the assignment. Each one is a customer report about Nova’s first screen. Open a ticket for the quote, the problem, and what this prototype does about it.</p>
+            </div>
+          </header>
+          <div class="ticket-summary" id="ticket-summary" aria-label="Ticket summary"></div>
+          <div class="ticket-toolbar">
+            <label class="ticket-search">Search tickets
+              <input id="ticket-search" type="search" placeholder="Search by title, note, or ID" />
+            </label>
+            <label>Category
+              <select id="ticket-type"><option value="all">All categories</option></select>
+            </label>
+            <label>Priority
+              <select id="ticket-priority">
+                <option value="all">All priorities</option>
+                <option value="P0">P0 · Critical</option>
+                <option value="P1">P1 · High</option>
+                <option value="P2">P2 · Standard</option>
+              </select>
+            </label>
+            <label>Scope
+              <select id="ticket-scope">
+                <option value="all">All scope</option>
+                <option value="now">In this build</option>
+                <option value="backlog">Backlog</option>
+              </select>
+            </label>
+          </div>
+          <div class="ticket-table-wrap">
+            <table class="ticket-table">
+              <thead>
+                <tr><th scope="col">Issue</th><th scope="col">Category</th><th scope="col">Priority</th><th scope="col">Scope</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Details</span></th></tr>
+              </thead>
+              <tbody id="board"></tbody>
+            </table>
+            <div id="ticket-empty" class="ticket-empty" hidden>No tickets match those filters. Try another search.</div>
+          </div>
+          <p id="ticket-count" class="ticket-count" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="view" data-view="priorities">
+        <div class="wide">
+          <h1>Priority</h1>
+          <p class="lede">Now is what the Solution screen does. Backlog stays out of this build: engineer conversion, and moving High, Medium, and Low. Inside each section the columns are P0, P1, and P2.</p>
+          <div id="roadmap" class="roadmap"></div>
+        </div>
+      </section>
+
+      <section class="view active" data-view="screen">
+        <div class="screen-shell" id="screen-shell" data-audience="interviewee">
+          <div class="screen-toolbar">
+            <div class="screen-identity">
+              <h1 id="screen-heading">AI recruiter solution</h1>
+              <p class="muted screen-hint" id="screen-hint">Talk with Nova in chat or voice, and end the interview when you are done.</p>
+            </div>
+            <div class="toolbar-controls">
+              <label class="role-select-label" for="role-select"><span>Role</span><select id="role-select"></select></label>
+            </div>
+          </div>
+          <div class="screen-layout">
+            <div class="chat">
+              <div class="chat-header">
+                <div class="chat-mode-switch candidate-only" role="group" aria-label="Conversation mode">
+                  <button id="chat-mode" class="mode-button is-active" type="button" aria-pressed="true">Chat</button>
+                  <button id="voice-mode" class="mode-button" type="button" aria-pressed="false">Voice</button>
+                </div>
+                <span id="chat-mode-copy" class="chat-transcript-label recruiter-only">Live transcript</span>
+                <span id="timer-note" class="timer-note">Timer starts when the first message appears</span>
+                <span id="interview-timer" class="interview-timer" hidden>15:00</span>
+                <button id="end" class="btn end-interview candidate-only" type="button">End interview</button>
+              </div>
+              <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+              <div id="chips" class="chips recruiter-only"></div>
+              <form id="composer" class="composer candidate-only">
+                <label class="sr-only" for="message">Reply as the candidate</label>
+                <textarea id="message" placeholder="Type a reply…" rows="1"></textarea>
+                <button id="send" class="btn" type="submit">Send</button>
+              </form>
+              <p class="composer-hint candidate-only">Enter to send · Shift + Enter for a new line</p>
+              <div id="interview-closed" class="interview-closed candidate-only" hidden>
+                <strong>Interview ended</strong>
+                <p>You can leave. Thank you for your time.</p>
+              </div>
+              <section id="voice-dock" class="voice-dock candidate-only" aria-label="Voice conversation controls" hidden>
+                <div class="voice-status-row">
+                  <span id="voice-orb" class="voice-orb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5a3 3 0 0 0-3 3v5.3a3 3 0 0 0 6 0V6.5a3 3 0 0 0-3-3Z"/><path d="M6.5 10.5v1.3a5.5 5.5 0 0 0 11 0v-1.3M12 17.3v3.2M9 20.5h6"/></svg></span>
+                  <div class="voice-status-copy"><strong id="voice-title">Voice screen ready</strong><p id="voice-status" aria-live="polite">Start a voice session to speak with Nova.</p></div>
+                </div>
+                <div class="voice-actions">
+                  <button id="voice-start" class="btn" type="button">Start voice screen</button>
+                  <button id="voice-mute" class="btn quiet" type="button" hidden>Mute microphone</button>
+                  <button id="voice-stop" class="btn quiet" type="button" hidden>End voice</button>
+                </div>
+              </section>
+            </div>
+            <aside class="side recruiter-only">
+              <div id="score" class="card side-block"></div>
+              <div class="card side-block progress-card">
+                <div class="progress-heading"><div><p class="kicker">Call journey</p><p id="progress-copy" class="muted">Introduction · Step 1 of 3</p></div><span id="progress-state" class="progress-state">In progress</span></div>
+                <ol id="progress-steps" class="progress-steps" aria-label="Interview stages"></ol>
+                <div class="goal-progress">
+                  <div class="goal-progress-heading"><div><p class="kicker">Role goals</p><p class="muted">Questions opened in this screen</p></div><strong id="goal-count">0/3</strong></div>
+                  <div id="progress-track" class="progress-track" role="progressbar" aria-label="Role goals opened" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><span id="progress-fill"></span></div>
+                  <ol id="goals" class="goal-list" aria-label="Role-specific screening goals"></ol>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="prompt">
+        <h1>The prompt</h1>
+        <p class="lede">This is the instruction for the selected role. The model uses it to phrase Nova’s spoken line. The interview controller still decides the turn: stay on a vague answer, follow one detail, pause, answer from the brief, bring the conversation back, or close.</p>
+        <div class="behavior-grid prompt-split">
+          <article class="behavior-card"><span class="behavior-tag">THE CONTROLLER</span><h3>Owns the screen</h3><p>One question a turn. The role goals stay in order. Pay is never invented. After the call, the recruiter summary is written from what was said, and that score is not spoken to the candidate.</p></article>
+          <article class="behavior-card"><span class="behavior-tag">THE MODEL</span><h3>Phrases the line</h3><p>With a key in Settings, the model writes the sentence from this prompt, the current goal, and facts retrieved from the role brief. A hello, an “I don’t know,” and a vague answer each get their own kind of turn. Without a key, the candidate hears the controller’s own line.</p></article>
+        </div>
+        <label class="muted" for="prompt-role">Role</label>
+        <select id="prompt-role"></select>
+        <article id="prompt-summary" class="behavior-card prompt-summary" hidden></article>
+        <pre id="prompt" class="quote prompt-text"></pre>
+      </section>
+
+      <section class="view" data-view="walkthrough">
+        <header class="walkthrough-hero">
+          <p class="eyebrow">THE ASSIGNMENT</p>
+          <h1>The customer notes are about the first screen. The solution is that screen.</h1>
+          <p class="lede">Nova runs Harbor’s first recruiter screen. The assignment is twelve customer notes: questions stacked before someone finished, vague answers counted as done, a named project was skipped, the AI line was missed, a fair question ended the call, the close was too fast, and the recruiter saw a score with no reason. Two notes are results, not causes. Engineer screens convert worse, and two later hires came back Medium.</p>
+          <p class="scope-note"><strong>Where to look.</strong> Tickets are the notes. Priorities say what is in this build. This page says how each note shows up in the interview. Solution is the interview, in chat or voice, with an interviewee view and a recruiter view of the same call.</p>
+        </header>
+
+        <section class="walkthrough-section" aria-labelledby="built-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">WHAT IS BUILT</p><h2 id="built-title">One call, two ways to sit in it</h2></div>
+            <span class="section-caption">Chat and voice share the controller</span>
+          </div>
+          <div class="behavior-grid">
+            <article class="behavior-card"><span class="behavior-tag">INTERVIEWEE</span><h3>Takes the screen</h3><p>They talk with Nova in chat or voice. The opening names Nova as an AI recruiter, names the role, says they can stop, and asks the first question. A timer starts when their first message appears. Ending the interview tells them it has ended and they can leave.</p></article>
+            <article class="behavior-card"><span class="behavior-tag">RECRUITER</span><h3>Reads the same call</h3><p>They see the live transcript, the call journey, the role goals, and the interview summary. Sample replies sit under the transcript so a vague answer, a named project, pay, an unfinished sentence, or an off-topic line can be tried. The interviewee does not see those samples or the summary.</p></article>
+          </div>
+        </section>
+
+        <section class="walkthrough-section" aria-labelledby="call-flow-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">THE SCREEN</p><h2 id="call-flow-title">Three stages, one question at a time</h2></div>
+          </div>
+          <ol class="flow-grid">
+            <li class="flow-card"><span class="flow-number">01</span><h3>Introduce and begin</h3><p>Nova says she is an AI recruiter for Harbor, names the role, says the candidate can stop, and asks the first role question in that opening.</p><span class="flow-rule">NV-7 · Disclosure in the opening</span></li>
+            <li class="flow-card"><span class="flow-number">02</span><h3>Listen, then follow once</h3><p>Three role goals stay in order. A vague answer stays. A named detail gets one question. An unfinished sentence gets a pause. A hello or an “I don’t know” is answered as conversation, then the goal continues.</p><span class="flow-rule">NV-2 · NV-3 · NV-4 · NV-9</span></li>
+            <li class="flow-card"><span class="flow-number">03</span><h3>Close, then the note</h3><p>Next steps are short sentences, with an offer to repeat them. The recruiter summary is written from what was said. The candidate is told they can leave.</p><span class="flow-rule">NV-11 · NV-12</span></li>
+          </ol>
+        </section>
+
+        <section class="walkthrough-section" aria-labelledby="behavior-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">HOW A TURN IS CHOSEN</p><h2 id="behavior-title">The last answer picks the next line</h2></div>
+          </div>
+          <div class="behavior-grid">
+            <article class="behavior-card"><span class="behavior-tag">NV-2 · VAGUE WORK</span><h3>Stay on the same goal</h3><p>“I do backend and stuff” does not finish the goal. Nova uses a few of their words and asks once for one real case. A second general answer moves on.</p></article>
+            <article class="behavior-card"><span class="behavior-tag">NV-2 · “I DON’T KNOW”</span><h3>Ask if the question is unclear</h3><p>If they say they don’t know, Nova asks whether the question is confusing or just hard to answer. It does not recite the goal again. If they are confused, the aim is said in plainer words.</p></article>
+            <article class="behavior-card"><span class="behavior-tag">NV-9 · A NAMED DETAIL</span><h3>Follow that detail once</h3><p>A tool, project, number, or specific moment gets one question about that thing. If they already gave a reason and a result, Nova accepts it and moves to the next goal.</p></article>
+            <article class="behavior-card"><span class="behavior-tag">NV-4 · UNFINISHED</span><h3>Pause</h3><p>A trailing “and…” or a clear pause gets a short backchannel. Nova asks nothing new and does not spend the pause on the next goal.</p></article>
+            <article class="behavior-card"><span class="behavior-tag">NV-8 · THEIR QUESTION</span><h3>Answer from the brief</h3><p>Team, place, and hours come from that role’s knowledge. Pay is not there, so Nova says it will not guess, asks if they want to keep going, and waits.</p></article>
+            <article class="behavior-card"><span class="behavior-tag">OFF THE GOAL</span><h3>Come back, then move</h3><p>A hello is greeted. Small talk is acknowledged and brought back to the question already asked. A second time off the goal, Nova leaves it and moves on.</p></article>
+          </div>
+        </section>
+
+        <section class="walkthrough-section" aria-labelledby="example-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">A CONCRETE EXAMPLE</p><h2 id="example-title">One engineer goal, heard properly</h2></div>
+            <button class="btn quiet walkthrough-link" type="button" data-go="screen">Try this in Solution</button>
+          </div>
+          <ol class="example-steps">
+            <li><span class="example-label">Nova opens</span><p>She says she is an AI recruiter calling for Harbor about the software engineer role, that they can stop, and asks about a piece of work they owned and what they personally changed.</p></li>
+            <li><span class="example-label">The answer is thin</span><p>“I mostly do backend, APIs and stuff.” That does not finish the goal. Nova stays and asks once, using those words, for one system they changed.</p></li>
+            <li><span class="example-label">Or they don’t know</span><p>“I don’t know.” Nova asks if the question is unclear, instead of asking the work question again.</p></li>
+            <li><span class="example-label">Then they give the work</span><p>“I rebuilt checkout because the Python service timed out in sale traffic. p99 went from 800ms to 180ms.” Ownership, a reason, and a result are all there, so Nova takes it and asks the next goal.</p></li>
+          </ol>
+        </section>
+
+        <section class="walkthrough-section" aria-labelledby="system-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">HOW THE SCREEN IS BUILT</p><h2 id="system-title">The controller decides. The model speaks.</h2></div>
+          </div>
+          <div class="system-grid">
+            <article class="system-card"><span class="system-index">01</span><h3>Interview controller</h3><p>It owns the opening, the three goals, pauses, the close, and when the screen is done. Chat and voice both send the candidate’s words here. The recruiter journey is this same state.</p></article>
+            <article class="system-card"><span class="system-index">02</span><h3>Role briefs and retrieval</h3><p>Engineer, restaurant, and tutor each have their own goals, tone, and brief. When the candidate asks something, Nova searches that brief. A fact that is missing stays missing. Pay is missing on purpose.</p></article>
+            <article class="system-card"><span class="system-index">03</span><h3>The prompt and the model</h3><p>The Prompt page is the instruction for the selected role. Settings holds the model key. The model phrases the line from that instruction and the controller’s decision. It does not skip a goal or invent a job detail.</p></article>
+            <article class="system-card"><span class="system-index">04</span><h3>The two views</h3><p>The interviewee gets the conversation, the timer, and a clear end. The recruiter gets the transcript, the goals, and the summary after the call. The timer length is set in Settings and starts on the first candidate message.</p></article>
+          </div>
+        </section>
+
+        <section class="walkthrough-section issue-map" aria-labelledby="issue-map-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">NOTES TO THE SCREEN</p><h2 id="issue-map-title">How each ticket fits the solution</h2></div>
+            <span class="section-caption">Try a case from the recruiter view</span>
+          </div>
+          <ol class="solve-list">
+            <li class="card solve"><span class="solve-index">P0</span><div>
+              <div class="solve-head"><span class="fit-id">NV-4</span><h2>Three questions, then a hangup</h2></div>
+              <p>An unfinished sentence gets a short “I’m here,” and no new question. The remaining goals never go out in one turn.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P0</span><div>
+              <div class="solve-head"><span class="fit-id">NV-2</span><h2>Vague technical answers got a pass</h2></div>
+              <p>A vague work answer stays on the goal and asks once, in their words. “I don’t know” asks whether the question is unclear. A second thin answer moves on.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P1</span><div>
+              <div class="solve-head"><span class="fit-id">NV-9</span><h2>Named projects got no follow-up</h2></div>
+              <p>A technology, number, or project gets one question about that thing. A reason and a result together already count, so Nova moves on.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P1</span><div>
+              <div class="solve-head"><span class="fit-id">NV-3</span><h2>Follow-ups from what they just said</h2></div>
+              <p>The same listening covers this request. The controller picks the turn. The model writes the sentence from the last answer, the role, and the current goal.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P1</span><div>
+              <div class="solve-head"><span class="fit-id">NV-8</span><h2>Candidate questions killed the call</h2></div>
+              <p>Nova answers team, place, and hours from the brief, and can search that brief. Pay gets “I don’t have it, and I won’t guess,” then a wait. The next goal is a later turn.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P1</span><div>
+              <div class="solve-head"><span class="fit-id">NV-7</span><h2>The AI line got rushed</h2></div>
+              <p>The opening says Nova is an AI recruiter, names Harbor and the role, says they can stop, and asks the first question there. The disclosure is heard, and the screen starts.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P2</span><div>
+              <div class="solve-head"><span class="fit-id">NV-1 · NV-6</span><h2>The voice matches the role</h2></div>
+              <p>Restaurant and tutor screens are warmer and plainer. Engineering stays short and uses their technical words. The turn rules are the same for each role.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P2</span><div>
+              <div class="solve-head"><span class="fit-id">NV-11</span><h2>Next steps were too fast</h2></div>
+              <p>The close is short sentences, one idea each, with an offer to repeat the same facts. Ending early tells the candidate the interview has ended and they can leave.</p>
+            </div></li>
+            <li class="card solve"><span class="solve-index">P2</span><div>
+              <div class="solve-head"><span class="fit-id">NV-12</span><h2>A score with no reason</h2></div>
+              <p>The recruiter view shows High, Medium, or Low and two or three lines from what was said. Medium means the screen heard some detail and not enough for a clear pass. The candidate never hears the score.</p>
+            </div></li>
+          </ol>
+        </section>
+
+        <section class="walkthrough-section open-questions" aria-labelledby="open-title">
+          <div class="section-heading"><div><p class="eyebrow">LEFT IN THE BACKLOG</p><h2 id="open-title">Two notes stay out of this screen</h2></div></div>
+          <article class="card solve not-solved">
+            <span class="solve-index" aria-hidden="true">·</span>
+            <div>
+              <div class="solve-head"><span class="fit-id">NV-10</span><h2>Engineer screens convert worse</h2></div>
+              <p>This is a result. The note does not say whether the cause is the questions, the conversation, or the score. The goals stay as they are. The next step is to read engineer screens beside the human ones, tag each miss, and change one thing.</p>
+            </div>
+          </article>
+          <article class="card solve not-solved">
+            <span class="solve-index" aria-hidden="true">·</span>
+            <div>
+              <div class="solve-head"><span class="fit-id">NV-5</span><h2>Two later hires came back Medium</h2></div>
+              <p>Two hires are too few to move High, Medium, and Low. The summary under the label is in this build, so Medium can be read as a thin screen. The bands stay until there are hire outcomes.</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="walkthrough-section decision-log" aria-labelledby="decision-title">
+          <div class="section-heading"><div><p class="eyebrow">WHY THE SCREEN IS SHAPED THIS WAY</p><h2 id="decision-title">Choices that follow from the notes</h2></div></div>
+          <div class="decision-grid">
+            <article class="card"><h3>Chat stands in for the phone</h3><p>The notes are about calls. Chat makes each turn visible while the screen is reviewed. Voice uses the same controller, so speech follows the same rules.</p></article>
+            <article class="card"><h3>Two seats, one transcript</h3><p>The interviewee needs the conversation and a clear end. The recruiter needs the journey and the summary the notes asked for. Both sit on the same call.</p></article>
+            <article class="card"><h3>The goals stay</h3><p>The notes describe listening failures. The engineer questions stay in order. What changes is how Nova hears an answer and what it asks next.</p></article>
+            <article class="card"><h3>The model phrases, the controller decides</h3><p>A hello, an unsure reply, and a vague answer should sound like a conversation. The prompt gives the model the role, the goal, and the rules. It cannot skip a stage or make up pay.</p></article>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" data-view="settings">
+        <div class="wide settings-page">
+          <header class="page-heading">
+            <div>
+              <p class="eyebrow">WORKSPACE CONFIGURATION</p>
+              <h1>Settings</h1>
+              <p class="lede">Choose the language model, the screen length, and the voice provider. Defaults sit beside each setting. Provider keys stay on the server.</p>
+            </div>
+          </header>
+          <div class="settings-page-grid">
+            <section class="settings-section" aria-labelledby="llm-settings-title">
+              <div class="settings-section-heading"><div><p class="kicker">LANGUAGE MODEL</p><strong id="llm-settings-title">Chat and interview reasoning</strong></div></div>
+              <label class="field" for="llm-provider">Model provider
+                <select id="llm-provider"><option value="builtin">Built-in interview controller</option><option value="meta">Muse Spark (server configured)</option><option value="gemini">Gemini / OpenAI-compatible</option></select>
+                <small id="llm-provider-default" class="field-default">Default: server setting</small>
+              </label>
+              <p class="muted">Nova’s interview controller keeps question order and recruiter evidence grounded. The language model shapes the response.</p>
+              <label class="field">API key
+                <input id="llm-key" type="password" autocomplete="off" placeholder="Paste a key" />
+                <small class="field-default">Stored on this server and never sent to the browser again.</small>
+              </label>
+              <label class="field">API base URL
+                <input id="llm-base" type="url" value="https://generativelanguage.googleapis.com/v1beta" />
+                <small id="llm-base-default" class="field-default">Default: Gemini API</small>
+              </label>
+              <div class="settings-grid">
+                <label class="field">Chat model
+                  <input id="llm-model" type="text" value="gemini-flash-latest" />
+                  <small id="llm-model-default" class="field-default">Default: gemini-flash-latest</small>
+                </label>
+                <label class="field">Embedding model
+                  <input id="llm-embed" type="text" value="gemini-embedding-001" />
+                  <small id="llm-embed-default" class="field-default">Default: gemini-embedding-001</small>
+                </label>
+              </div>
+              <div class="model-actions"><button id="llm-save" class="btn" type="button">Save model</button><button id="llm-clear" class="btn quiet" type="button">Use built-in</button></div>
+              <p id="llm-status" class="muted" aria-live="polite"></p>
+            </section>
+
+            <section class="settings-section" aria-labelledby="timer-settings-title">
+              <div class="settings-section-heading"><div><p class="kicker">INTERVIEW</p><strong id="timer-settings-title">Screen length</strong></div></div>
+              <label class="field" for="interview-minutes">Timer length (minutes)
+                <input id="interview-minutes" type="number" min="1" max="120" step="1" value="15" />
+                <small class="field-default">Starts when the candidate sends the first chat or voice reply. Default: 15 minutes.</small>
+              </label>
+              <p id="timer-settings-status" class="muted" aria-live="polite"></p>
+            </section>
+
+            <section class="settings-section" aria-labelledby="voice-settings-title">
+              <div class="settings-section-heading"><div><p class="kicker">VOICE PROVIDER</p><strong id="voice-settings-title">Choose a voice kit</strong></div><span id="voice-settings-badge" class="settings-badge">Default</span></div>
+              <label class="field" for="voice-provider">Use for voice screens
+                <select id="voice-provider"><option value="vapi">Vapi</option><option value="livekit">LiveKit</option></select>
+                <small id="voice-provider-default" class="field-default">Default: server setting</small>
+              </label>
+              <p id="voice-provider-status" class="muted voice-provider-status" aria-live="polite">Loading provider settings…</p>
+              <label class="field">Voice ID
+                <input id="voice-voice-id" type="text" value="Jess" />
+                <small id="voice-voice-id-default" class="field-default">Default: Jess</small>
+              </label>
+            </section>
+
+            <section class="settings-section" aria-labelledby="audio-settings-title">
+              <div class="settings-section-heading"><div><p class="kicker">AUDIO</p><strong id="audio-settings-title">Noise and microphone</strong></div></div>
+              <label class="check-field"><input id="voice-noise-cancellation" type="checkbox" checked /><span><strong>Noise cancellation</strong><small>Suppress background noise before Nova hears the answer.</small></span></label>
+              <div class="settings-grid settings-grid-three">
+                <label class="check-field compact"><input id="voice-echo-cancellation" type="checkbox" checked /><span>Echo cancellation</span></label>
+                <label class="check-field compact"><input id="voice-noise-suppression" type="checkbox" checked /><span>Noise suppression</span></label>
+                <label class="check-field compact"><input id="voice-auto-gain" type="checkbox" checked /><span>Auto gain</span></label>
+              </div>
+              <small id="voice-noise-default" class="field-default">Default: all microphone processing on</small>
+            </section>
+
+            <section class="settings-section" aria-labelledby="turn-settings-title">
+              <div class="settings-section-heading"><div><p class="kicker">TURN TAKING</p><strong id="turn-settings-title">Interruptions and pauses</strong></div></div>
+              <label class="check-field"><input id="voice-interruption-enabled" type="checkbox" checked /><span><strong>Allow candidate interruptions</strong><small>Nova stops speaking when the candidate takes the floor.</small></span></label>
+              <div class="settings-grid">
+                <label class="field">Interruption detection
+                  <select id="voice-interruption-mode"><option value="adaptive">Adaptive</option><option value="vad">Voice activity</option></select>
+                  <small id="voice-interruption-mode-default" class="field-default">Default: adaptive</small>
+                </label>
+                <label class="field">Minimum speech (ms)<input id="voice-interruption-duration" type="number" min="0" max="2000" step="50" value="500" /><small class="field-default">Default: 500 ms</small></label>
+                <label class="field">Minimum words<input id="voice-interruption-words" type="number" min="0" max="10" step="1" value="0" /><small class="field-default">Default: 0 words</small></label>
+                <label class="field">Recovery pause (sec)<input id="voice-interruption-backoff" type="number" min="0" max="10" step="0.1" value="1" /><small class="field-default">Default: 1 second</small></label>
+              </div>
+              <div class="settings-grid">
+                <label class="field">Turn detection<select id="voice-endpointing-mode"><option value="fixed">Fixed</option><option value="dynamic">Dynamic</option></select><small class="field-default">Default: fixed</small></label>
+                <label class="field">Start after silence (ms)<input id="voice-endpointing-min" type="number" min="0" max="5000" step="50" value="500" /><small class="field-default">Default: 500 ms</small></label>
+                <label class="field">Maximum wait (ms)<input id="voice-endpointing-max" type="number" min="100" max="10000" step="100" value="3000" /><small class="field-default">Default: 3000 ms</small></label>
+                <label class="field">Echo warmup (ms)<input id="voice-aec-warmup" type="number" min="0" max="10000" step="100" value="3000" /><small class="field-default">Default: 3000 ms</small></label>
+              </div>
+              <label class="check-field"><input id="voice-preemptive" type="checkbox" /><span><strong>Preemptive generation</strong><small>Prepare a reply while the candidate is still speaking. Uses more compute.</small></span></label>
+              <small class="field-default">Default: off</small>
+            </section>
+          </div>
+          <div class="settings-actions"><button id="voice-save" class="btn" type="button">Apply voice settings</button><button id="voice-reset" class="btn quiet" type="button">Restore defaults</button></div>
+          <p id="voice-settings-status" class="muted" aria-live="polite"></p>
+        </div>
+      </section>
+
+        </main>
+    <div id="drawer" class="drawer" hidden>
+      <button type="button" class="drawer-backdrop" data-close aria-label="Close ticket"></button>
+      <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+        <div class="drawer-top">
+          <p class="kicker" id="drawer-key"></p>
+          <button type="button" class="text-button" id="drawer-close" data-close>Close</button>
+        </div>
+        <h2 id="drawer-title"></h2>
+        <p class="ticket-meta" id="drawer-meta"></p>
+        <p class="kicker">What they said</p>
+        <blockquote id="drawer-quote" class="note-quote"></blockquote>
+        <p class="kicker">The issue</p>
+        <p id="drawer-issue"></p>
+        <p class="kicker">What this prototype does</p>
+        <p id="drawer-solution"></p>
+        <div class="why-box">
+          <p class="kicker">Why this priority</p>
+          <p id="drawer-why"></p>
+        </div>
+      </aside>
+    </div>
+      </div>
+    </div>
+    <script src="/tickets.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

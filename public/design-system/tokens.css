@@ -1,0 +1,47 @@
+/* Peoplebox tokens, sampled from Peoplebox.ai-Logo-OG-Img.webp
+   Lilac ground  #F0ECF9
+   Wordmark      #5E2AB2
+   Pretzel       #F9891D
+   Do not recolor the logo files. Use the artwork as-is. */
+
+:root {
+  --pb-lilac: #f0ecf9;
+  --pb-lilac-deep: #e3daf6;
+  --pb-white: #fffcff;
+  --pb-violet: #5e2ab2;
+  --pb-violet-ink: #3b1780;
+  --pb-violet-soft: #efe8fb;
+  --pb-orange: #f9891d;
+  --pb-orange-deep: #c86a0a;
+  --pb-ink: #24183a;
+  --pb-muted: #655c78;
+  --pb-line: #ddd4f0;
+  --pb-low: #8d849c;
+
+  --font-display: "Outfit", "Segoe UI", sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", sans-serif;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.35rem;
+  --text-xl: 1.85rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 12px 32px rgba(62, 28, 130, 0.08);
+  --shadow-pop: 0 8px 20px rgba(94, 42, 178, 0.16);
+
+  --line: 1px solid var(--pb-line);
+}
