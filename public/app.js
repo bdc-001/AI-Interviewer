@@ -28,6 +28,8 @@ let voiceConfig = null;
 let voicePollTimer = null;
 let voiceConnected = false;
 let pinnedSpoken = null;
+let shownVagueNotice = 0;
+let vagueToastTimer = 0;
 let spokenSaveTimer = 0;
 let livekitClient = null;
 let livekitMuted = false;
@@ -1138,6 +1140,7 @@ function renderSession() {
     renderedTranscript = "";
     liveDraft = "";
     pinnedSpoken = null;
+    shownVagueNotice = 0;
   }
   const role = roles.find((item) => item.id === session.roleId);
 
@@ -1180,7 +1183,21 @@ function renderSession() {
     $("#voice-dock").hidden = true;
   }
   syncInterviewClock(session, Boolean(liveDraft));
+  renderVagueNotice(session);
   setBusy(busy);
+}
+
+function renderVagueNotice(next) {
+  const notice = next?.vagueNotice;
+  const toast = $("#vague-toast");
+  if (!toast || !notice?.id || notice.id === shownVagueNotice) return;
+  shownVagueNotice = notice.id;
+  toast.hidden = false;
+  toast.textContent = notice.text;
+  window.clearTimeout(vagueToastTimer);
+  vagueToastTimer = window.setTimeout(() => {
+    toast.hidden = true;
+  }, 5600);
 }
 
 function personIcon() {

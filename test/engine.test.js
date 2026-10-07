@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyTurn, createSession, endSession, questionCount } from "../lib/engine.js";
+import { applyTurn, createSession, endForVagueAnswers, endSession, noteVagueAnswer, questionCount } from "../lib/engine.js";
 import { buildPrompt } from "../lib/prompt.js";
 import { getRole } from "../lib/roles.js";
 
@@ -286,6 +286,21 @@ test("prompt names the role, bans invented pay, and keeps one question per turn"
   const tutor = buildPrompt("tutor");
   assert.match(tutor, /Warm and plain/);
   assert.doesNotMatch(tutor, /Formal and plain/);
+});
+
+test("three vague answers end the interview", () => {
+  const session = startScreen("engineer");
+  say(session, "I mostly do backend and stuff.");
+  assert.equal(noteVagueAnswer(session), "warn");
+  assert.equal(session.done, false);
+  assert.match(session.vagueNotice.text, /specific example/i);
+  assert.equal(noteVagueAnswer(session), "warn");
+  assert.match(session.vagueNotice.text, /one more/i);
+  assert.equal(noteVagueAnswer(session), "end");
+  endForVagueAnswers(session);
+  assert.equal(session.done, true);
+  assert.match(last(session), /too vague to continue/i);
+  assert.ok(session.score);
 });
 
 function startScreen(roleId) {
