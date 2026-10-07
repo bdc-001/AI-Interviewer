@@ -56,6 +56,17 @@ test("a vague engineering answer stays on the same goal", () => {
   assert.equal(view.goals[1].status, "later");
 });
 
+test("no real answer stays Low instead of Medium", () => {
+  const session = startScreen("engineer");
+  say(session, "I don't remember doing something like that.");
+  say(session, "I don't know.");
+  endSession(session);
+  assert.equal(session.score.label, "Low");
+  assert.equal(session.evidence[0].quality, "missing");
+  assert.equal(session.score.lines.some((line) => /^Heard:/i.test(line)), false);
+  assert.match(session.score.lines[0], /isn't a clear example/i);
+});
+
 test("an unsure reply asks what is unclear instead of repeating the goal", () => {
   const session = startScreen("engineer");
   say(session, "i dont know");
