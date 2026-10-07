@@ -17,6 +17,7 @@ import { createLiveKitAccessToken, dispatchLiveKitAgent, isLiveKitConfigured, li
 import { buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "./lib/voice.js";
 import { getVoiceSettings, publicVoiceSettings, setVoiceSettings } from "./lib/voice-settings.js";
 import { readSession, readVoiceSessionId, writeSession, writeVoiceToken } from "./lib/session-store.js";
+import { interviewLimitMessage, interviewUsage, reserveInterview } from "./lib/interview-limit.js";
 
 const root = existsSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "public"))
   ? path.dirname(fileURLToPath(import.meta.url))
@@ -129,7 +130,7 @@ async function route(req, res) {
       return await voiceCompletion(req, res, url);
     }
     if (req.method === "GET" && url.pathname === "/api/llm") {
-      return json(res, 200, publicLlmStatus({ retrieval: retrievalMode() }));
+      return json(res, 200, publicLlmStatus({ retrieval: retrievalMode(), interview: await interviewUsage() }));
     }
     if (req.method === "POST" && url.pathname === "/api/llm") {
       const body = await readJson(req);
@@ -139,6 +140,10 @@ async function route(req, res) {
     const body = await readJson(req);
     const session = await loadCarried(body.id, body.session);
     if (!session) return json(res, 404, { error: "That screen is gone. Start it again." });
+    if (String(body.text || "").trim()) {
+      const blocked = await claimInterview(session);
+      if (blocked) return json(res, 403, { error: blocked, interview: await interviewUsage() });
+    }
     applyTurn(session, body.text || "");
     await maybeSpeak(session);
     await writeSession(session);
@@ -184,6 +189,11 @@ async function voiceCompletion(req, res, url) {
   const incomingUserCount = countVoiceUserTurns(body.messages);
   const isNewTurn = isNewVoiceTurn(body.messages, session.voiceUserCount || 0);
   if (isNewTurn && !session.done) {
+    const blocked = await claimInterview(session);
+    if (blocked) {
+      await writeSession(session);
+      return openAICompletion(res, body.model || "gpt-4o-mini", blocked, Boolean(body.stream));
+    }
     applyTurn(session, candidateText);
     await maybeSpeak(session);
     session.voiceUserCount = incomingUserCount;
@@ -292,7 +302,12 @@ async function liveKitTurn(req, res) {
   if (!session.turnResults) session.turnResults = {};
   if (session.turnResults[body.turnId]) return json(res, 200, session.turnResults[body.turnId]);
 
-  if (!session.done) {
+  if (!session.done && body.text.trim()) {
+    const blocked = await claimInterview(session);
+    if (blocked) {
+      await writeSession(session);
+      return json(res, 403, { error: blocked, interview: await interviewUsage() });
+    }
     applyTurn(session, body.text);
     await maybeSpeak(session);
   }
@@ -302,6 +317,14 @@ async function liveKitTurn(req, res) {
   session.turnResults[body.turnId] = result;
   await writeSession(session);
   return json(res, 200, result);
+}
+
+async function claimInterview(session) {
+  if (!session || session.interviewCounted) return "";
+  const gate = await reserveInterview(session.id);
+  if (!gate.allowed) return interviewLimitMessage(gate);
+  session.interviewCounted = true;
+  return "";
 }
 
 async function loadCarried(id, carried) {

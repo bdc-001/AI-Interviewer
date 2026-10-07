@@ -233,11 +233,16 @@ async function restart() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roleId, mode }),
     });
-    session = await response.json();
+    const data = await response.json();
+    if (!response.ok) {
+      showScreenError(data.error || "The interview could not start.");
+      return;
+    }
+    session = data;
     renderSession();
     await loadVoiceConfig();
   } catch {
-    $("#error").hidden = false;
+    showScreenError("This page needs the local server. In this folder run node server.js, then open http://localhost:4173");
   } finally {
     setBusy(false);
   }
@@ -929,12 +934,17 @@ async function send(text) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: session.id, text, session }),
     });
-    if (!response.ok) throw new Error("turn failed");
-    session = await response.json();
+    const data = await response.json();
+    if (!response.ok) {
+      showScreenError(data.error || "That reply could not be sent.");
+      renderSession();
+      return;
+    }
+    session = data;
     renderSession();
     if (session.speechError) $("#llm-status").textContent = session.speechError;
   } catch {
-    $("#error").hidden = false;
+    showScreenError("This page needs the local server. In this folder run node server.js, then open http://localhost:4173");
     renderSession();
   } finally {
     setBusy(false);
@@ -1028,18 +1038,28 @@ function renderModel(data) {
   const other =
     data.primary === "meta"
       ? ` Gemini stays available if Meta fails.`
-      : data.fallbackConfigured
+      : data.fallbackConfigured && data.primary !== "openai"
         ? ` Backup: ${data.fallbackModel}.`
         : "";
+  const interviews = data.interview
+    ? ` ${data.interview.used} of ${data.interview.limit} interviews used.`
+    : "";
   $("#llm-status").textContent = data.configured
-    ? `Using ${chatModel} for chat. Retrieval is ${retrieval}.${other}`
-    : "No key yet. Nova uses the built-in call logic.";
+    ? `Using ${chatModel} for chat. Retrieval is ${retrieval}.${other}${interviews}`
+    : `No key yet. Nova uses the built-in call logic.${interviews}`;
+}
+
+function showScreenError(message) {
+  const banner = $("#error");
+  banner.hidden = false;
+  banner.textContent = message;
 }
 
 function llmProviderLabel(provider) {
   if (provider === "meta") return "Muse Spark";
+  if (provider === "openai") return "OpenAI";
   if (provider === "builtin") return "built-in interview controller";
-  return "Gemini / OpenAI-compatible";
+  return "Gemini";
 }
 
 let promptTicket = 0;
