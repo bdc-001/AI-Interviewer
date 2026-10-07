@@ -66,6 +66,18 @@ test("an unsure reply asks what is unclear instead of repeating the goal", () =>
   assert.equal(questionCount(last(session)), 1);
 });
 
+test("a bare yes is not quoted back as the canned work probe", () => {
+  const session = startScreen("engineer");
+  say(session, "hi");
+  say(session, "Yes");
+  assert.equal(session.goalIndex, 0);
+  assert.equal(session.lastDecision.title, "Back to the same goal");
+  assert.doesNotMatch(last(session), /you said/i);
+  assert.match(last(session), /piece of work|personally change/i);
+  assert.equal(questionCount(last(session)), 1);
+  assert.equal(session.evidence[0].quotes.includes("Yes"), false);
+});
+
 test("a greeting is answered without repeating the goal question", () => {
   const session = startScreen("engineer");
   say(session, "hi");
