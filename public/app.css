@@ -389,6 +389,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 
 .bubble { animation: rise 0.18s ease; }
+.message-row.is-draft .bubble { animation: none; opacity: 0.88; }
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(4px); }

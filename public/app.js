@@ -38,6 +38,9 @@ let browserRecognition = null;
 let browserVoiceActive = false;
 let browserVoiceMuted = false;
 let browserVoicePending = false;
+let liveDraft = "";
+let renderedTranscript = "";
+let renderedSessionId = "";
 
 const $ = (sel) => document.querySelector(sel);
 const appShell = $("#app-shell");
@@ -502,7 +505,13 @@ async function startVoice() {
       voiceClient = null;
     });
     voiceClient.on("message", (message) => {
-      if (message?.type !== "transcript" || message.transcriptType !== "final") return;
+      if (message?.type !== "transcript") return;
+      const heard = String(message.transcript || "").trim();
+      if (message.role === "user" && heard) setLiveDraft(heard);
+      if (message.transcriptType !== "final") {
+        if (message.role === "user") $("#voice-status").textContent = "Listening…";
+        return;
+      }
       $("#voice-status").textContent = message.role === "user"
         ? "Muse is following your answer…"
         : "Nova is speaking…";
@@ -604,6 +613,11 @@ async function startLiveKitVoice() {
     }
   });
   room.on(LiveKitSdk.RoomEvent.TranscriptionReceived, (segments, participant) => {
+    const heard = segments?.map((segment) => segment.text).join(" ").trim();
+    if (participant?.isLocal && heard) {
+      setLiveDraft(heard);
+      $("#voice-status").textContent = "Listening…";
+    }
     const finalText = segments?.filter((segment) => segment.final).map((segment) => segment.text).join(" ").trim();
     if (finalText) {
       $("#voice-status").textContent = participant?.isLocal ? "Muse is following your answer…" : "Nova is speaking…";
@@ -699,7 +713,11 @@ function startBrowserVoice() {
       if (event.results[index].isFinal) finalText += text;
       else interimText += text;
     }
-    if (interimText) $("#voice-status").textContent = `I heard: “${interimText.trim()}”`;
+    const preview = `${finalText} ${interimText}`.trim();
+    if (preview) {
+      setLiveDraft(preview);
+      $("#voice-status").textContent = "Listening…";
+    }
     const heard = finalText.trim();
     if (heard && !browserVoicePending) {
       if (heardNova(heard) || window.speechSynthesis.speaking) {
@@ -903,6 +921,7 @@ async function onSend(event) {
 
 async function send(text) {
   setBusy(true);
+  liveDraft = "";
   showPending(text);
   try {
     const response = await fetch("/api/turn", {
@@ -1047,21 +1066,31 @@ async function loadPrompt(nextRole = roleId) {
 
 function renderSession() {
   if (!session) return;
+  if (session.id !== renderedSessionId) {
+    renderedSessionId = session.id;
+    renderedTranscript = "";
+    liveDraft = "";
+  }
   const role = roles.find((item) => item.id === session.roleId);
 
   const last = session.messages[session.messages.length - 1];
   const log = $("#messages");
-  log.innerHTML = session.messages
-    .map((message) => {
-      const isLastNova = message.role !== "user" && message === last;
-      const grounded =
-        isLastNova && session.toolsUsed?.includes("search_knowledge")
-          ? `<span class="ground">Checked the role brief</span>`
-          : "";
-      return messageMarkup(message, { isLatest: isLastNova, grounded });
-    })
-    .join("");
-  log.scrollTop = log.scrollHeight;
+  const signature = session.messages.map((message) => `${message.role}\u0000${message.text}`).join("\u0001");
+  if (signature !== renderedTranscript) {
+    renderedTranscript = signature;
+    log.innerHTML = session.messages
+      .map((message) => {
+        const isLastNova = message.role !== "user" && message === last;
+        const grounded =
+          isLastNova && session.toolsUsed?.includes("search_knowledge")
+            ? `<span class="ground">Checked the role brief</span>`
+            : "";
+        return messageMarkup(message, { isLatest: isLastNova, grounded });
+      })
+      .join("");
+    log.scrollTop = log.scrollHeight;
+  }
+  renderLiveDraft();
 
   renderProgress(session);
 
@@ -1082,7 +1111,7 @@ function renderSession() {
     $(".composer-hint").hidden = false;
     $("#voice-dock").hidden = true;
   }
-  syncInterviewClock(session);
+  syncInterviewClock(session, Boolean(liveDraft));
   setBusy(busy);
 }
 
@@ -1121,7 +1150,35 @@ function messageMarkup(message, { isLatest = false, grounded = "" } = {}) {
   const bubble = `<div class="bubble ${candidate ? "user" : "nova"}${isLatest ? " live" : ""}${message.typing ? " typing" : ""}">${body}</div>`;
   const stack = `<div class="message-stack"><div class="message-meta"><span class="who">${esc(name)}</span>${time}</div>${bubble}</div>`;
   const avatar = participantAvatar(message.role);
-  return `<div class="message-row ${candidate ? "candidate-row" : "agent-row"}">${candidate ? `${stack}${avatar}` : `${avatar}${stack}`}</div>`;
+  return `<div class="message-row ${candidate ? "candidate-row" : "agent-row"}${message.draft ? " is-draft" : ""}">${candidate ? `${stack}${avatar}` : `${avatar}${stack}`}</div>`;
+}
+
+function setLiveDraft(text) {
+  liveDraft = String(text || "").replace(/\s+/g, " ").trim();
+  renderLiveDraft();
+  if (session && liveDraft) syncInterviewClock(session, true);
+}
+
+function renderLiveDraft() {
+  const log = $("#messages");
+  if (!log) return;
+  const existing = log.querySelector(".message-row.is-draft");
+  const committed = [...(session?.messages || [])].reverse().find((message) => message.role === "user");
+  const showing = conversationMode === "voice" && liveDraft && committed?.text?.trim() !== liveDraft;
+  if (!showing) {
+    existing?.remove();
+    return;
+  }
+  if (!existing) {
+    log.insertAdjacentHTML("beforeend", messageMarkup({ role: "user", text: liveDraft, at: new Date().toISOString(), draft: true }));
+    log.scrollTop = log.scrollHeight;
+    return;
+  }
+  const bubble = existing.querySelector(".bubble");
+  if (bubble && bubble.textContent !== liveDraft) {
+    bubble.textContent = liveDraft;
+    log.scrollTop = log.scrollHeight;
+  }
 }
 
 function renderProgress(currentSession) {
@@ -1222,7 +1279,7 @@ function startInterviewClock() {
   }, 250);
 }
 
-function syncInterviewClock(current) {
+function syncInterviewClock(current, draftStarted = false) {
   const clock = $("#interview-timer");
   if (!clock) return;
   if (timerSessionId !== current.id) {
@@ -1232,7 +1289,7 @@ function syncInterviewClock(current) {
     stopInterviewClock();
   }
   const note = $("#timer-note");
-  const started = current.messages.some((message) => message.role === "user");
+  const started = draftStarted || current.messages.some((message) => message.role === "user");
   if (!started) {
     clock.hidden = true;
     if (note) note.hidden = false;
