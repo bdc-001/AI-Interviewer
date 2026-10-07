@@ -294,6 +294,8 @@ test("prompt names the role, bans invented pay, and keeps one question per turn"
   assert.match(prompt, /natural enough|unfinished/i);
   assert.match(prompt, /not a prediction/i);
   assert.match(prompt, /bring them back/i);
+  assert.match(prompt, /only greet you/);
+  assert.match(prompt, /Do not stop after the greeting/);
   const tutor = buildPrompt("tutor");
   assert.match(tutor, /Warm and plain/);
   assert.doesNotMatch(tutor, /Formal and plain/);
