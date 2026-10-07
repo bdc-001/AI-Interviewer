@@ -27,6 +27,8 @@ let voiceClient = null;
 let voiceConfig = null;
 let voicePollTimer = null;
 let voiceConnected = false;
+let pinnedSpoken = null;
+let spokenSaveTimer = 0;
 let livekitClient = null;
 let livekitMuted = false;
 let livekitAudioNodes = [];
@@ -504,14 +506,19 @@ async function startVoice() {
     voiceClient.on("message", (message) => {
       if (message?.type !== "transcript") return;
       const heard = String(message.transcript || "").trim();
+      if (message.role === "assistant" && heard) {
+        showSpokenReply(heard, { persist: message.transcriptType === "final" });
+        setVoiceStatus("Nova is speaking…");
+        if (message.transcriptType !== "final") return;
+        syncVoiceSession();
+        return;
+      }
       if (message.role === "user" && heard) setLiveDraft(heard);
       if (message.transcriptType !== "final") {
         if (message.role === "user") setVoiceStatus("Listening…");
         return;
       }
-      setVoiceStatus(message.role === "user"
-        ? "Nova is listening…"
-        : "Nova is speaking…");
+      setVoiceStatus("Nova is listening…");
       syncVoiceSession();
     });
     voiceClient.on("error", (error) => {
@@ -611,13 +618,16 @@ async function startLiveKitVoice() {
   });
   room.on(LiveKitSdk.RoomEvent.TranscriptionReceived, (segments, participant) => {
     const heard = segments?.map((segment) => segment.text).join(" ").trim();
+    const finalText = segments?.filter((segment) => segment.final).map((segment) => segment.text).join(" ").trim();
     if (participant?.isLocal && heard) {
       setLiveDraft(heard);
       setVoiceStatus("Listening…");
+    } else if (heard) {
+      showSpokenReply(finalText || heard, { persist: Boolean(finalText) });
+      setVoiceStatus("Nova is speaking…");
     }
-    const finalText = segments?.filter((segment) => segment.final).map((segment) => segment.text).join(" ").trim();
-    if (finalText) {
-      setVoiceStatus(participant?.isLocal ? "Nova is listening…" : "Nova is speaking…");
+    if (finalText && participant?.isLocal) {
+      setVoiceStatus("Nova is listening…");
       syncVoiceSession();
     }
   });
@@ -896,12 +906,57 @@ function stopVoicePolling() {
   voicePollTimer = null;
 }
 
+function showSpokenReply(text, { persist = false } = {}) {
+  const spoken = String(text || "").replace(/\s+/g, " ").trim();
+  if (!spoken || !session) return;
+  const userTurns = session.messages.filter((message) => message.role === "user").length;
+  if (!userTurns) return;
+  const lastUser = [...session.messages].reverse().find((message) => message.role === "user");
+  if (lastUser?.text === spoken) return;
+  const opening = session.messages.find((message) => message.role === "assistant");
+  const last = session.messages[session.messages.length - 1];
+  if (opening && spoken === opening.text && last !== opening) return;
+  pinnedSpoken = { text: spoken, userTurns, sessionId: session.id };
+  if (last?.role === "assistant") {
+    last.text = spoken;
+    last.spoken = true;
+  } else {
+    session.messages.push({ role: "assistant", text: spoken, at: new Date().toISOString(), spoken: true });
+  }
+  renderSession();
+  if (!persist) return;
+  window.clearTimeout(spokenSaveTimer);
+  spokenSaveTimer = window.setTimeout(() => saveSpokenReply(spoken), 200);
+}
+
+function saveSpokenReply(spoken) {
+  const token = voiceConfig?.sessionToken;
+  if (!token || !spoken) return;
+  fetch("/api/voice/spoken", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, text: spoken }),
+  }).catch(() => {});
+}
+
+function applyPinnedSpoken(next) {
+  if (!pinnedSpoken?.text || pinnedSpoken.sessionId !== next?.id || !next.messages) return;
+  const userTurns = next.messages.filter((message) => message.role === "user").length;
+  if (userTurns !== pinnedSpoken.userTurns) return;
+  const last = next.messages[next.messages.length - 1];
+  if (last?.role !== "assistant") return;
+  last.text = pinnedSpoken.text;
+  last.spoken = true;
+}
+
 async function syncVoiceSession() {
   if (!session) return;
   try {
     const response = await fetch(`/api/session?id=${encodeURIComponent(session.id)}`);
     if (!response.ok) return;
-    session = await response.json();
+    const next = await response.json();
+    applyPinnedSpoken(next);
+    session = next;
     renderSession();
   } catch {}
 }
@@ -1082,6 +1137,7 @@ function renderSession() {
     renderedSessionId = session.id;
     renderedTranscript = "";
     liveDraft = "";
+    pinnedSpoken = null;
   }
   const role = roles.find((item) => item.id === session.roleId);
 

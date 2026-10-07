@@ -14,7 +14,7 @@ import { clearEmbeddings, indexEmbeddings, retrievalMode } from "./lib/rag.js";
 import { getRole, publicRoles } from "./lib/roles.js";
 import { maybeSpeak } from "./lib/speak.js";
 import { createLiveKitAccessToken, dispatchLiveKitAgent, isLiveKitConfigured, liveKitClientUrl, normalizeVoiceProvider } from "./lib/livekit.js";
-import { buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "./lib/voice.js";
+import { applySpokenLine, buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "./lib/voice.js";
 import { getVoiceSettings, publicVoiceSettings, setVoiceSettings } from "./lib/voice-settings.js";
 import { readSession, readVoiceSessionId, writeSession, writeVoiceToken } from "./lib/session-store.js";
 import { interviewLimitMessage, interviewUsage, reserveInterview } from "./lib/interview-limit.js";
@@ -26,6 +26,14 @@ loadEnv(path.join(root, ".env"));
 loadEnv(path.join(process.cwd(), ".env"));
 const port = Number(process.env.PORT) || 4173;
 const livekitDispatches = new Map();
+const sessionLocks = new Map();
+
+function withSessionLock(id, task) {
+  const previous = sessionLocks.get(id) || Promise.resolve();
+  const run = previous.catch(() => {}).then(task);
+  sessionLocks.set(id, run.then(() => {}, () => {}));
+  return run;
+}
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -126,6 +134,9 @@ async function route(req, res) {
     if (req.method === "POST" && url.pathname === "/api/livekit/turn") {
       return await liveKitTurn(req, res);
     }
+    if (req.method === "POST" && url.pathname === "/api/voice/spoken") {
+      return await saveSpokenLine(req, res);
+    }
     if (req.method === "POST" && url.pathname.startsWith("/api/voice/completions")) {
       return await voiceCompletion(req, res, url);
     }
@@ -186,25 +197,43 @@ async function voiceCompletion(req, res, url) {
     sessionId = session.id;
   }
 
-  const incomingUserCount = countVoiceUserTurns(body.messages);
-  const isNewTurn = isNewVoiceTurn(body.messages, session.voiceUserCount || 0);
-  if (isNewTurn && !session.done) {
-    const blocked = await claimInterview(session);
-    if (blocked) {
-      await writeSession(session);
-      return openAICompletion(res, body.model || "gpt-4o-mini", blocked, Boolean(body.stream));
+  return withSessionLock(session.id, async () => {
+    const current = await readSession(session.id);
+    if (current) session = current;
+    const incomingUserCount = countVoiceUserTurns(body.messages);
+    const isNewTurn = isNewVoiceTurn(body.messages, session.voiceUserCount || 0);
+    if (isNewTurn && !session.done) {
+      const blocked = await claimInterview(session);
+      if (blocked) {
+        await writeSession(session);
+        return openAICompletion(res, body.model || "gpt-4o-mini", blocked, Boolean(body.stream));
+      }
+      applyTurn(session, candidateText);
+      await maybeSpeak(session);
+      session.voiceUserCount = incomingUserCount;
     }
-    applyTurn(session, candidateText);
-    await maybeSpeak(session);
-    session.voiceUserCount = incomingUserCount;
-  }
-  await writeSession(session);
+    await writeSession(session);
 
-  const latest = session.messages.at(-1);
-  const reply = latest?.role === "user"
-    ? "Take your time. I'm listening."
-    : latest?.text || "Thanks. Let's continue when you're ready.";
-  return openAICompletion(res, body.model || "muse-spark-1.3-contributor", reply, Boolean(body.stream));
+    const latest = session.messages.at(-1);
+    const reply = latest?.role === "user"
+      ? "Take your time. I'm listening."
+      : latest?.text || "Thanks. Let's continue when you're ready.";
+    return openAICompletion(res, body.model || "muse-spark-1.3-contributor", reply, Boolean(body.stream));
+  });
+}
+
+async function saveSpokenLine(req, res) {
+  const body = await readJson(req);
+  const token = typeof body.token === "string" ? body.token : "";
+  const sessionId = await readVoiceSessionId(token);
+  const existing = sessionId ? await readSession(sessionId) : null;
+  if (!existing) return json(res, 401, { error: "This voice session has expired. Start voice again." });
+  return withSessionLock(existing.id, async () => {
+    const session = (await readSession(existing.id)) || existing;
+    applySpokenLine(session, body.text);
+    await writeSession(session);
+    return json(res, 200, snapshot(session));
+  });
 }
 
 async function createLiveKitSession(req, res) {

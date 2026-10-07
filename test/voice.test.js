@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getRole } from "../lib/roles.js";
-import { buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "../lib/voice.js";
+import { applySpokenLine, buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "../lib/voice.js";
 
 test("Vapi prompt follows Nova's candidate-screen policy and active role", () => {
   const prompt = buildVapiPrompt(getRole("restaurant"));
@@ -35,4 +35,24 @@ test("voice turn retries deduplicate without dropping a repeated answer", () => 
   assert.equal(countVoiceUserTurns(secondYes), 2);
   assert.equal(isNewVoiceTurn(secondYes, 1), true);
   assert.equal(isNewVoiceTurn(secondYes, 2), false);
+});
+
+test("spoken voice line replaces the canned chat reply for the current turn", () => {
+  const session = {
+    done: false,
+    messages: [
+      { role: "assistant", text: "Hi, I'm Nova. Tell me about a piece of work you owned." },
+      { role: "user", text: "I've worked on a product management project." },
+      { role: "assistant", text: "You said \"I've worked on a product management project.\" Pick one system you personally changed. What did you change?" },
+    ],
+  };
+
+  assert.equal(applySpokenLine(session, "Hi, I'm Nova. Tell me about a piece of work you owned."), false);
+  assert.equal(
+    applySpokenLine(session, "You mentioned a product management project. What part of it did you personally own?"),
+    true,
+  );
+  assert.equal(session.messages.at(-1).text, "You mentioned a product management project. What part of it did you personally own?");
+  assert.equal(session.messages[0].text, "Hi, I'm Nova. Tell me about a piece of work you owned.");
+  assert.equal(applySpokenLine(session, "I've worked on a product management project."), false);
 });
