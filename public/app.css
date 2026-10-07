@@ -632,7 +632,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .voice-status-copy p { max-width: 54ch; margin: 0; color: var(--pb-muted); font-size: .76rem; line-height: 1.45; }
 .voice-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
 .voice-actions .btn { min-height: 40px; }
-#composer[hidden], #chips[hidden], .composer-hint[hidden], #voice-dock[hidden], #voice-start[hidden], #voice-mute[hidden], #voice-stop[hidden] { display: none; }
+#composer[hidden], #chips[hidden], .composer-hint[hidden], #voice-dock[hidden], #voice-start[hidden], #voice-mute[hidden], #voice-stop[hidden], #voice-status[hidden] { display: none; }
 @keyframes voice-breathe { 50% { box-shadow: 0 0 0 9px rgba(104,64,168,.055); } }
 
 .chip:disabled { opacity: 0.55; cursor: wait; }

@@ -286,6 +286,20 @@ function setConversationMode(nextMode) {
   if (!voice && voiceConnected) stopVoice();
 }
 
+function showVoiceCard({ title = "Nova", status = "", button = "", disabled } = {}) {
+  $("#voice-title").textContent = title;
+  setVoiceStatus(status);
+  if (button) $("#voice-start").textContent = button;
+  if (disabled !== undefined) $("#voice-start").disabled = disabled;
+}
+
+function setVoiceStatus(text) {
+  const statusEl = $("#voice-status");
+  const next = String(text || "").trim();
+  statusEl.hidden = !next;
+  statusEl.textContent = next;
+}
+
 async function loadVoiceConfig() {
   if (!session) return;
   try {
@@ -314,46 +328,24 @@ async function loadVoiceConfig() {
     button.disabled = voiceProvider === "livekit"
       ? !voiceConfig.livekitReady
       : !voiceConfig.useVapi && !voiceConfig.browserAvailable;
-    if (voiceConfig.useLiveKit) {
-      $("#voice-title").textContent = "LiveKit voice screen ready";
-      $("#voice-status").textContent = "LiveKit audio · Muse interview flow · same transcript and progress";
-      button.textContent = "Start voice screen";
+    if (voiceConfig.useLiveKit || voiceConfig.useVapi || voiceConfig.browserAvailable) {
+      showVoiceCard({ title: "Nova", button: "Start", disabled: button.disabled });
     } else if (voiceProvider === "livekit") {
-      $("#voice-title").textContent = "LiveKit setup needed";
-      $("#voice-status").textContent = "Add LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET on the server.";
-      button.textContent = "Voice unavailable";
-    } else if (voiceConfig.useVapi) {
-      $("#voice-title").textContent = "Voice screen ready";
-      $("#voice-status").textContent = `Vapi voice · ${voiceConfig.voiceId} · Muse interview flow`;
-      button.textContent = "Start voice screen";
-    } else if (voiceConfig.browserAvailable) {
-      $("#voice-title").textContent = "Voice screen ready";
-      $("#voice-status").textContent = voiceConfig.vapiReady
-        ? isLocal
-          ? "Local preview uses browser speech. Deploy on public HTTPS to route calls through Vapi."
-          : "Vapi needs a public HTTPS address to reach the Muse interview endpoint."
-        : "Browser speech · Muse interview flow · same transcript and progress";
-      button.textContent = "Start voice screen";
+      showVoiceCard({ title: "Nova", status: "Voice is not ready on the server yet.", button: "Start", disabled: true });
     } else {
-      $("#voice-title").textContent = voiceConfig.vapiReady ? "Voice needs HTTPS" : "Voice setup unavailable";
-      $("#voice-status").textContent = voiceConfig.vapiReady
-        ? "Use a public HTTPS address for Vapi, or open this demo in a browser with speech recognition."
-        : "This browser has no speech recognition. Add VAPI_PUBLIC_KEY for Vapi voice on a public HTTPS site.";
-      button.textContent = "Voice unavailable";
+      showVoiceCard({ title: "Nova", status: "Voice is not available in this browser.", button: "Start", disabled: true });
     }
   } catch {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const browserAvailable = Boolean(SpeechRecognition && window.speechSynthesis);
     voiceConfig = { ready: false, useVapi: false, browserAvailable };
     renderVoiceProviderStatus();
-    $("#voice-start").disabled = voiceProvider === "livekit" || !browserAvailable;
-    $("#voice-title").textContent = voiceProvider === "livekit" ? "LiveKit settings unavailable" : browserAvailable ? "Browser voice ready" : "Voice setup unavailable";
-    $("#voice-status").textContent = voiceProvider === "livekit"
-      ? "LiveKit settings could not load. Check the server connection and try again."
-      : browserAvailable
-        ? "Vapi settings could not load. You can still preview voice with browser speech."
-        : "The app could not load Vapi settings, and this browser has no speech recognition.";
-    $("#voice-start").textContent = voiceProvider === "livekit" || !browserAvailable ? "Voice unavailable" : "Start voice screen";
+    showVoiceCard({
+      title: "Nova",
+      status: browserAvailable ? "" : "Voice is not available in this browser.",
+      button: "Start",
+      disabled: voiceProvider === "livekit" || !browserAvailable,
+    });
   }
 }
 
@@ -468,7 +460,7 @@ async function startVoice() {
   if (!session || voiceConnected) return;
   $("#voice-start").disabled = true;
   $("#voice-title").textContent = "Connecting to Nova";
-  $("#voice-status").textContent = "Allow microphone access when your browser asks.";
+  setVoiceStatus("Allow microphone access when your browser asks.");
   try {
     if (!voiceConfig) await loadVoiceConfig();
     if (voiceProvider === "livekit") {
@@ -488,7 +480,7 @@ async function startVoice() {
     voiceClient.on("call-start", () => {
       voiceConnected = true;
       $("#voice-title").textContent = "You’re connected";
-      $("#voice-status").textContent = "Speak naturally. Nova will keep the same progress and recruiter note.";
+      setVoiceStatus("Speak naturally. Nova will keep the same progress and recruiter note.");
       $("#voice-orb").classList.add("is-live");
       $("#voice-start").hidden = true;
       $("#voice-mute").hidden = false;
@@ -500,11 +492,11 @@ async function startVoice() {
       stopVoicePolling();
       await syncVoiceSession();
       $("#voice-title").textContent = "Voice screen ended";
-      $("#voice-status").textContent = "Your conversation and progress are still here. You can continue in chat.";
+      setVoiceStatus("Your conversation and progress are still here. You can continue in chat.");
       $("#voice-orb").classList.remove("is-live");
       $("#voice-start").hidden = false;
       $("#voice-start").disabled = false;
-      $("#voice-start").textContent = "Start voice again";
+      $("#voice-start").textContent = "Start";
       $("#voice-mute").hidden = true;
       $("#voice-stop").hidden = true;
       voiceClient = null;
@@ -514,18 +506,18 @@ async function startVoice() {
       const heard = String(message.transcript || "").trim();
       if (message.role === "user" && heard) setLiveDraft(heard);
       if (message.transcriptType !== "final") {
-        if (message.role === "user") $("#voice-status").textContent = "Listening…";
+        if (message.role === "user") setVoiceStatus("Listening…");
         return;
       }
-      $("#voice-status").textContent = message.role === "user"
-        ? "Muse is following your answer…"
-        : "Nova is speaking…";
+      setVoiceStatus(message.role === "user"
+        ? "Nova is listening…"
+        : "Nova is speaking…");
       syncVoiceSession();
     });
     voiceClient.on("error", (error) => {
       const message = error?.message || "The voice connection could not start.";
       $("#voice-title").textContent = "Voice connection issue";
-      $("#voice-status").textContent = message;
+      setVoiceStatus(message);
       $("#voice-start").disabled = false;
     });
 
@@ -574,7 +566,7 @@ async function startVoice() {
     voiceClient = null;
     voiceConnected = false;
     $("#voice-title").textContent = "Voice could not start";
-    $("#voice-status").textContent = error.message || "Check the Vapi public key and try again.";
+    setVoiceStatus(error.message || "Voice could not start. Check the connection and try again.");
     $("#voice-start").disabled = false;
   }
 }
@@ -621,18 +613,18 @@ async function startLiveKitVoice() {
     const heard = segments?.map((segment) => segment.text).join(" ").trim();
     if (participant?.isLocal && heard) {
       setLiveDraft(heard);
-      $("#voice-status").textContent = "Listening…";
+      setVoiceStatus("Listening…");
     }
     const finalText = segments?.filter((segment) => segment.final).map((segment) => segment.text).join(" ").trim();
     if (finalText) {
-      $("#voice-status").textContent = participant?.isLocal ? "Muse is following your answer…" : "Nova is speaking…";
+      setVoiceStatus(participant?.isLocal ? "Nova is listening…" : "Nova is speaking…");
       syncVoiceSession();
     }
   });
   room.on(LiveKitSdk.RoomEvent.ParticipantConnected, () => {
     if (livekitClient !== room) return;
     $("#voice-title").textContent = "You’re connected";
-    $("#voice-status").textContent = "Speak naturally. Nova will keep the same progress and recruiter note.";
+    setVoiceStatus("Speak naturally. Nova will keep the same progress and recruiter note.");
   });
   room.on(LiveKitSdk.RoomEvent.Disconnected, () => {
     if (livekitClient !== room) return;
@@ -642,21 +634,21 @@ async function startLiveKitVoice() {
     livekitAudioNodes.forEach((node) => node.remove());
     livekitAudioNodes = [];
     $("#voice-title").textContent = "Voice screen ended";
-    $("#voice-status").textContent = "Your conversation and progress are still here. You can continue in chat.";
+    setVoiceStatus("Your conversation and progress are still here. You can continue in chat.");
     $("#voice-orb").classList.remove("is-live");
     $("#voice-start").hidden = false;
     $("#voice-start").disabled = false;
-    $("#voice-start").textContent = "Start voice again";
+    $("#voice-start").textContent = "Start";
     $("#voice-mute").hidden = true;
     $("#voice-stop").hidden = true;
     syncVoiceSession();
   });
 
   try {
-    $("#voice-status").textContent = "Connecting to the LiveKit room…";
+    setVoiceStatus("Connecting to the LiveKit room…");
     await room.connect(roomConfig.url, roomConfig.token);
     await room.localParticipant.setMicrophoneEnabled(true, audioCaptureDefaults);
-    $("#voice-status").textContent = "Connected. Starting Nova’s interviewer…";
+    setVoiceStatus("Connected. Starting Nova’s interviewer…");
     const dispatchResponse = await fetch("/api/livekit/dispatch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -670,7 +662,7 @@ async function startLiveKitVoice() {
     if (!dispatchResponse.ok) throw new Error(dispatchResult.error || "LiveKit could not start Nova’s interviewer.");
     voiceConnected = true;
     $("#voice-title").textContent = "You’re connected";
-    $("#voice-status").textContent = "Nova is joining. Speak naturally and your progress will stay in sync.";
+    setVoiceStatus("Nova is joining. Speak naturally and your progress will stay in sync.");
     $("#voice-orb").classList.add("is-live");
     $("#voice-start").hidden = true;
     $("#voice-mute").hidden = false;
@@ -703,7 +695,7 @@ function startBrowserVoice() {
     if (!browserVoiceActive) return;
     voiceConnected = true;
     $("#voice-title").textContent = "Listening to you";
-    $("#voice-status").textContent = "Speak naturally. Nova will keep the same progress and recruiter note.";
+    setVoiceStatus("Speak naturally. Nova will keep the same progress and recruiter note.");
     $("#voice-orb").classList.add("is-live");
     $("#voice-start").hidden = true;
     $("#voice-mute").hidden = false;
@@ -721,12 +713,12 @@ function startBrowserVoice() {
     const preview = `${finalText} ${interimText}`.trim();
     if (preview) {
       setLiveDraft(preview);
-      $("#voice-status").textContent = "Listening…";
+      setVoiceStatus("Listening…");
     }
     const heard = finalText.trim();
     if (heard && !browserVoicePending) {
       if (heardNova(heard) || window.speechSynthesis.speaking) {
-        $("#voice-status").textContent = "That was Nova. I’m listening for you.";
+        setVoiceStatus("That was Nova. I’m listening for you.");
         return;
       }
       browserVoicePending = true;
@@ -743,7 +735,7 @@ function startBrowserVoice() {
         : event.error === "no-speech"
           ? "I didn’t hear anything. Try speaking again."
           : `Voice input issue: ${event.error || "try again"}.`;
-    $("#voice-status").textContent = message;
+    setVoiceStatus(message);
     if (event.error === "not-allowed" || event.error === "network") browserVoiceMuted = true;
     $("#voice-mute").textContent = browserVoiceMuted ? "Resume microphone" : "Pause microphone";
   };
@@ -759,7 +751,7 @@ function startBrowserVoice() {
 
 async function handleBrowserVoiceTurn(text) {
   $("#voice-title").textContent = "Nova is thinking";
-  $("#voice-status").textContent = "Your answer is being added to the shared interview.";
+  setVoiceStatus("Your answer is being added to the shared interview.");
   await send(text);
   const latest = session?.messages?.at(-1);
   browserVoicePending = false;
@@ -782,7 +774,7 @@ function speakBrowserLine(text) {
   utterance.pitch = 1.08;
   utterance.onstart = () => {
     $("#voice-title").textContent = "Nova is speaking";
-    $("#voice-status").textContent = "Your progress stays in sync with the conversation.";
+    setVoiceStatus("Your progress stays in sync with the conversation.");
     $("#voice-orb").classList.add("is-speaking");
   };
   utterance.onend = () => {
@@ -868,10 +860,10 @@ function toggleVoiceMute() {
     if (browserVoiceMuted) {
       try { browserRecognition?.stop(); } catch {}
       window.speechSynthesis?.cancel();
-      $("#voice-status").textContent = "Microphone paused.";
+      setVoiceStatus("Microphone paused.");
       $("#voice-mute").textContent = "Resume microphone";
     } else {
-      $("#voice-status").textContent = "Microphone on. Speak when ready.";
+      setVoiceStatus("Microphone on. Speak when ready.");
       $("#voice-mute").textContent = "Pause microphone";
       beginBrowserRecognition();
     }
@@ -881,17 +873,17 @@ function toggleVoiceMute() {
     livekitMuted = !livekitMuted;
     livekitClient.localParticipant.setMicrophoneEnabled(!livekitMuted).catch(() => {
       livekitMuted = !livekitMuted;
-      $("#voice-status").textContent = "The microphone could not be changed. Check browser permissions.";
+      setVoiceStatus("The microphone could not be changed. Check browser permissions.");
     });
     $("#voice-mute").textContent = livekitMuted ? "Unmute microphone" : "Mute microphone";
-    $("#voice-status").textContent = livekitMuted ? "Microphone muted." : "Microphone on. Speak when ready.";
+    setVoiceStatus(livekitMuted ? "Microphone muted." : "Microphone on. Speak when ready.");
     return;
   }
   if (!voiceClient) return;
   const muted = !voiceClient.isMuted();
   voiceClient.setMuted(muted);
   $("#voice-mute").textContent = muted ? "Unmute microphone" : "Mute microphone";
-  $("#voice-status").textContent = muted ? "Microphone muted." : "Microphone on. Speak when ready.";
+  setVoiceStatus(muted ? "Microphone muted." : "Microphone on. Speak when ready.");
 }
 
 function startVoicePolling() {
