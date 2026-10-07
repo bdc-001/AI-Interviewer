@@ -1373,6 +1373,7 @@ function renderProgress(currentSession) {
   const hasGoalEvidence = currentSession.goals.some((goal) => goal.quotes.length > 0);
   const stopped = decisionTitle === "Stopped when they said no";
   const endedEarly = decisionTitle === "Ended early";
+  const noteWritten = Boolean(currentSession.done && currentSession.score);
   const completed = currentSession.phase === "done" && !stopped && !endedEarly;
   let activeStep;
   if (currentSession.phase === "done") {
@@ -1382,14 +1383,16 @@ function renderProgress(currentSession) {
   } else {
     activeStep = currentSession.phase === "close" ? 2 : hasCandidateTurn ? 1 : 0;
   }
-  const stateLabel = completed ? "Complete" : stopped ? "Stopped" : endedEarly ? "Ended early" : "In progress";
-  $("#progress-copy").textContent = `${flowSteps[activeStep].title} · Step ${activeStep + 1} of ${flowSteps.length}`;
+  const stateLabel = completed ? "Complete" : noteWritten ? "Note ready" : stopped ? "Stopped" : endedEarly ? "Ended early" : "In progress";
+  $("#progress-copy").textContent = noteWritten
+    ? "Close and hand off · Recruiter note"
+    : `${flowSteps[activeStep].title} · Step ${activeStep + 1} of ${flowSteps.length}`;
   $("#progress-state").textContent = stateLabel;
   $("#progress-state").className = `progress-state${completed ? " is-complete" : stopped || endedEarly ? " is-ended" : ""}`;
   $("#progress-steps").innerHTML = flowSteps.map((step, index) => {
-    const isDone = index < activeStep || (completed && index === activeStep);
+    const isDone = index < activeStep || (completed && index === activeStep) || (noteWritten && index === 2);
     const isCurrent = index === activeStep && !isDone;
-    const isEnded = index === activeStep && (stopped || endedEarly);
+    const isEnded = index === activeStep && (stopped || endedEarly) && !isDone;
     const state = isDone ? "Complete" : isEnded ? "Ended" : isCurrent ? "In progress" : "Up next";
     return `<li class="flow-step${isDone ? " is-done" : ""}${isCurrent ? " is-current" : ""}${isEnded ? " is-ended" : ""}"${isCurrent ? ' aria-current="step"' : ""}>
       <span class="flow-step-marker" aria-hidden="true">${isDone ? "✓" : index + 1}</span>
@@ -1410,9 +1413,11 @@ function renderProgress(currentSession) {
       const opened = index < openedGoals;
       const completeGoal = index < currentSession.goalIndex || (completed && opened);
       const currentGoal = opened && index === currentSession.goalIndex && !currentSession.done;
+      const quote = goal.quotes?.at(-1);
+      const heard = quote ? `<span class="goal-quote">${esc(clipQuote(quote))}</span>` : "";
       return `<li class="goal${opened ? " goal-opened" : ""}${currentGoal ? " goal-current" : ""}">
         <span class="goal-marker" aria-hidden="true">${completeGoal ? "✓" : index + 1}</span>
-        <span class="goal-title">${esc(goal.title)}</span>
+        <span class="goal-copy"><span class="goal-title">${esc(goal.title)}</span>${heard}</span>
         <span class="pill ${esc(status)}">${esc(statusLabel[status] || status)}</span>
       </li>`;
     })
@@ -1506,15 +1511,20 @@ function loadTimerSetting() {
 
 function renderScore(score) {
   const box = $("#score");
+  const inline = $("#recruiter-result");
   box.hidden = false;
-  if (!score) {
-    box.innerHTML = liveSummary(session);
-    return;
-  }
+  const html = score ? scoreMarkup(score) : liveSummary(session);
+  box.innerHTML = html;
+  if (!inline) return;
+  inline.innerHTML = html;
+  inline.hidden = !session?.done || !score;
+}
+
+function scoreMarkup(score) {
   const lines = score.lines.length
     ? `<ul class="clean">${score.lines.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>`
     : `<p>Nothing under the label.</p>`;
-  box.innerHTML = `<p class="kicker">Interview summary</p>
+  return `<p class="kicker">Interview summary</p>
     <p><span class="score-label ${esc(score.label)}">${esc(score.label)}</span></p>
     ${lines}
     <p class="muted">${esc(score.footnote)}</p>`;
