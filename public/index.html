@@ -36,7 +36,7 @@
           <h1 id="section-title" class="module-title">Solution</h1>
           <div id="audience-switch" class="chat-mode-switch audience-switch" role="group" aria-label="Who is using this screen">
             <button id="audience-interviewee" class="mode-button is-active" type="button" aria-pressed="true">Interviewee</button>
-            <button id="audience-recruiter" class="mode-button" type="button" aria-pressed="false">Recruiter</button>
+            <button id="audience-recruiter" class="mode-button" type="button" aria-pressed="false" disabled title="The recruiter note opens when the interview ends.">Recruiter</button>
           </div>
         </header>
         <header class="mobile-topbar">
@@ -113,6 +113,7 @@
             </div>
             <div class="toolbar-controls">
               <label class="role-select-label" for="role-select"><span>Role</span><select id="role-select"></select></label>
+              <p id="new-interview-note" class="muted new-interview-note">Refresh the page to start a new interview.</p>
             </div>
           </div>
           <div class="screen-layout">
@@ -138,7 +139,7 @@
               <p class="composer-hint candidate-only">Enter to send · Shift + Enter for a new line</p>
               <div id="interview-closed" class="interview-closed candidate-only" hidden>
                 <strong>Interview ended</strong>
-                <p>You can leave. Thank you for your time.</p>
+                <p>You can leave. Thank you for your time. Refresh the page to start a new interview.</p>
               </div>
               <section id="voice-dock" class="voice-dock candidate-only" aria-label="Voice conversation controls" hidden>
                 <div class="voice-status-row">

@@ -22,7 +22,6 @@ let session = null;
 let busy = false;
 let conversationMode = "chat";
 let audience = "interviewee";
-try { audience = localStorage.getItem("nova-audience") === "recruiter" ? "recruiter" : "interviewee"; } catch {}
 let voiceClient = null;
 let voiceConfig = null;
 let voicePollTimer = null;
@@ -83,7 +82,10 @@ $("#composer").addEventListener("submit", onSend);
 $("#chat-mode").addEventListener("click", () => setConversationMode("chat"));
 $("#voice-mode").addEventListener("click", () => setConversationMode("voice"));
 $("#audience-interviewee").addEventListener("click", () => setAudience("interviewee"));
-$("#audience-recruiter").addEventListener("click", () => setAudience("recruiter"));
+$("#audience-recruiter").addEventListener("click", () => {
+  if (session && !session.done) return;
+  setAudience("recruiter");
+});
 $("#voice-start").addEventListener("click", startVoice);
 $("#voice-stop").addEventListener("click", stopVoice);
 $("#voice-mute").addEventListener("click", toggleVoiceMute);
@@ -146,6 +148,10 @@ $("#llm-clear").addEventListener("click", async () => {
 $("#prompt-role").addEventListener("change", async (event) => {
   const nextRole = event.target.value;
   if (!nextRole) return;
+  if (interviewLocked()) {
+    event.target.value = roleId;
+    return;
+  }
   roleId = nextRole;
   syncRoleSelect();
   await loadPrompt(nextRole);
@@ -216,7 +222,31 @@ function renderChoices() {
   $("#prompt-role").value = roleId;
 }
 
+function interviewLocked() {
+  if (!session) return false;
+  return session.done || session.messages.some((message) => message.role === "user");
+}
+
+function syncInterviewLocks() {
+  const locked = interviewLocked();
+  const select = $("#role-select");
+  if (select) {
+    select.disabled = locked;
+    select.title = locked ? "Refresh the page to start a new interview." : "";
+  }
+  const recruiterTab = $("#audience-recruiter");
+  const inProgress = Boolean(session && !session.done);
+  if (recruiterTab) {
+    recruiterTab.disabled = inProgress;
+    recruiterTab.title = inProgress ? "The recruiter note opens when the interview ends." : "";
+  }
+}
+
 function onSetupChange() {
+  if (interviewLocked()) {
+    syncRoleSelect();
+    return;
+  }
   const nextMode = document.querySelector('input[name="mode"]:checked');
   const nextRole = $("#role-select").value || roleId;
   const pickedMode = nextMode ? nextMode.value : mode;
@@ -247,7 +277,7 @@ async function restart() {
       return;
     }
     session = data;
-    renderSession();
+    setAudience("interviewee");
     await loadVoiceConfig();
   } catch {
     showScreenError("This page needs the local server. In this folder run node server.js, then open http://localhost:4173");
@@ -259,8 +289,8 @@ async function restart() {
 const INTERVIEWEE_NAME = "Alagu";
 
 function setAudience(next) {
+  if (next === "recruiter" && session && !session.done) next = "interviewee";
   audience = next === "recruiter" ? "recruiter" : "interviewee";
-  try { localStorage.setItem("nova-audience", audience); } catch {}
   $("#screen-shell").dataset.audience = audience;
   $("#audience-interviewee").classList.toggle("is-active", audience === "interviewee");
   $("#audience-recruiter").classList.toggle("is-active", audience === "recruiter");
@@ -268,7 +298,7 @@ function setAudience(next) {
   $("#audience-recruiter").setAttribute("aria-pressed", String(audience === "recruiter"));
   $("#screen-heading").textContent = audience === "interviewee" ? `Hi ${INTERVIEWEE_NAME}!` : "AI recruiter solution";
   $("#screen-hint").textContent = audience === "recruiter"
-    ? "Follow this interview through the transcript, journey, and summary."
+    ? "This interview is finished. Refresh the page to start a new one."
     : "Talk with Nova in chat or voice, and end the interview when you are done.";
   syncChatCopy();
   if (session) renderSession();
@@ -1231,6 +1261,10 @@ async function loadPrompt(nextRole = roleId) {
 
 function renderSession() {
   if (!session) return;
+  if (session.done && audience !== "recruiter") {
+    setAudience("recruiter");
+    return;
+  }
   if (session.id !== renderedSessionId) {
     renderedSessionId = session.id;
     renderedTranscript = "";
@@ -1283,6 +1317,7 @@ function renderSession() {
   }
   syncInterviewClock(session, Boolean(liveDraft));
   renderVagueNotice(session);
+  syncInterviewLocks();
   setBusy(busy);
 }
 

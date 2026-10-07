@@ -276,6 +276,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .role-select-label { display: flex; align-items: center; gap: 8px; color: var(--pb-muted); font-size: .78rem; font-weight: 650; }
 .role-select-label select { min-width: 182px; border-color: #e4ddec; padding: 8px 30px 8px 11px; color: var(--pb-ink); font-weight: 600; }
+.role-select-label select:disabled { opacity: 0.65; cursor: not-allowed; }
+.new-interview-note { margin: 0; max-width: 220px; font-size: .75rem; line-height: 1.35; }
 .advanced-controls { position: relative; color: var(--pb-muted); font-size: .82rem; }
 .advanced-controls > summary { cursor: pointer; list-style: none; border: 1px solid #e6e1eb; border-radius: 9px; padding: 8px 11px; background: #fff; font-weight: 600; white-space: nowrap; }
 .advanced-controls > summary::-webkit-details-marker { display: none; }
@@ -464,6 +466,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .mode-button { min-height: 30px; padding: 5px 11px; border: 0; border-radius: 7px; color: #706a7b; background: transparent; font-size: .75rem; font-weight: 650; cursor: pointer; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
 .mode-button:hover { color: var(--pb-violet-ink); }
 .mode-button.is-active { color: var(--pb-violet-ink); background: #fff; box-shadow: 0 1px 3px rgba(36,24,58,.11); }
+.mode-button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .side-block { padding: 14px; }
 .composer { padding: 10px 14px 8px; }
