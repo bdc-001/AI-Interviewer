@@ -14,7 +14,7 @@ import { clearEmbeddings, indexEmbeddings, retrievalMode } from "./lib/rag.js";
 import { getRole, publicRoles } from "./lib/roles.js";
 import { maybeSpeak } from "./lib/speak.js";
 import { createLiveKitAccessToken, dispatchLiveKitAgent, isLiveKitConfigured, liveKitClientUrl, normalizeVoiceProvider } from "./lib/livekit.js";
-import { applySpokenLine, buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "./lib/voice.js";
+import { applyHeardLine, applySpokenLine, buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "./lib/voice.js";
 import { getVoiceSettings, publicVoiceSettings, setVoiceSettings } from "./lib/voice-settings.js";
 import { readSession, readVoiceSessionId, writeSession, writeVoiceToken } from "./lib/session-store.js";
 import { interviewLimitMessage, interviewUsage, reserveInterview } from "./lib/interview-limit.js";
@@ -211,6 +211,8 @@ async function voiceCompletion(req, res, url) {
       applyTurn(session, candidateText);
       await maybeSpeak(session);
       session.voiceUserCount = incomingUserCount;
+    } else if (candidateText && !session.done) {
+      applyHeardLine(session, candidateText);
     }
     await writeSession(session);
 
@@ -230,7 +232,8 @@ async function saveSpokenLine(req, res) {
   if (!existing) return json(res, 401, { error: "This voice session has expired. Start voice again." });
   return withSessionLock(existing.id, async () => {
     const session = (await readSession(existing.id)) || existing;
-    applySpokenLine(session, body.text);
+    if (body.role === "user") applyHeardLine(session, body.text);
+    else applySpokenLine(session, body.text);
     await writeSession(session);
     return json(res, 200, snapshot(session));
   });

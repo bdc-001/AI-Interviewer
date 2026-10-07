@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getRole } from "../lib/roles.js";
-import { applySpokenLine, buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn } from "../lib/voice.js";
+import { applyHeardLine, applySpokenLine, buildVapiPrompt, countVoiceUserTurns, isNewVoiceTurn, mergeTranscript } from "../lib/voice.js";
 
 test("Vapi prompt follows Nova's candidate-screen policy and active role", () => {
   const prompt = buildVapiPrompt(getRole("restaurant"));
@@ -55,4 +55,30 @@ test("spoken voice line replaces the canned chat reply for the current turn", ()
   assert.equal(session.messages.at(-1).text, "You mentioned a product management project. What part of it did you personally own?");
   assert.equal(session.messages[0].text, "Hi, I'm Nova. Tell me about a piece of work you owned.");
   assert.equal(applySpokenLine(session, "I've worked on a product management project."), false);
+  assert.equal(
+    applySpokenLine(session, "You mentioned a product management project. What part of it did you personally own? I want the system you changed."),
+    true,
+  );
+  assert.match(session.messages.at(-1).text, /I want the system you changed/);
+  assert.equal(applySpokenLine(session, "What part of it did you personally own?"), true);
+  assert.match(session.messages.at(-1).text, /I want the system you changed/);
+});
+
+test("a longer transcript replaces a short saved answer in the same turn", () => {
+  const session = {
+    done: false,
+    messages: [
+      { role: "assistant", text: "Tell me about a system you changed." },
+      { role: "user", text: "I rebuilt checkout." },
+    ],
+  };
+  const full = "I rebuilt checkout. I owned the API migration and cut the latency in half.";
+  assert.equal(mergeTranscript("I rebuilt checkout.", full), full);
+  assert.equal(mergeTranscript(full, "I owned the API migration and cut the latency in half."), full);
+  session.messages.push({ role: "assistant", text: "What did you own in that change?" });
+  assert.equal(applyHeardLine(session, full), true);
+  assert.equal(session.messages[1].text, full);
+  assert.equal(applyHeardLine(session, "I rebuilt checkout."), false);
+  assert.equal(applySpokenLine(session, "A".repeat(1500)), true);
+  assert.equal(session.messages.at(-1).text.length, 1500);
 });
